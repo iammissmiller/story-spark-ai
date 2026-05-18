@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
 import HeroSectionComponent from "./components/hero/hero_section.component";
 import HomeComponent from "./components/home/home.component";
 import LoginComponent from "./components/login/login.component";
@@ -20,6 +21,7 @@ import UserComponent from "./components/dashboard/users/user.component";
 import PricingComponent from "./components/pricing/pricing.component";
 import ExploreComponent from "./components/post/post.component";
 import PostDetailsComponent from "./components/post/post.details.component";
+import BookmarksComponent from "./components/post/bookmarks.component";
 import { getUserInfo } from "./services/auth.service";
 import UserListComponent from "./components/dashboard/users/user.list.component";
 import NotFoundComponent from "./components/not-found.component";
@@ -27,9 +29,16 @@ import EmailValidationComponent from "./components/email_validation/email.valida
 import { USER_ROLE } from "./constants/role";
 import PostListsComponent from "./components/dashboard/posts/post_lists.component";
 import ProfileComponent from "./components/dashboard/profile/profile.component";
+import HelpCenterComponent from "./components/help_center/help_center.component";
+
+import AboutUsComponent from "./components/footer/about-us.tsx";
+import CareerComponent from "./components/footer/career.tsx";
+import ContactUsComponent from "./components/footer/contact-us.tsx";
+import BlogComponent from "./components/footer/blog.tsx";
+import HelpCenterComponent from "./components/footer/help-center.tsx";
+import GuidelinesComponent from "./components/footer/guidelines.tsx";
 import TemplatesComponent from "./components/templates/templates.component";
 import CommunityComponent from "./components/community/community.component";
-
 const ProtectedRoute = ({
   element,
   allowedRoles,
@@ -38,11 +47,11 @@ const ProtectedRoute = ({
   allowedRoles: string[];
 }) => {
   const user = getUserInfo();
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
+ if (!user) {
+  return <Navigate to="/login" />;
+}
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
   return element;
 };
@@ -85,6 +94,7 @@ function App() {
               <HeroSectionComponent />
               <HomeComponent />
             </RootLayout>
+
           }
         />
         <Route
@@ -94,25 +104,16 @@ function App() {
               <TemplatesComponent />
             </RootLayout>
           }
+        /><Route
+          path="/writing-assistant"
+          element={
+            <RootLayout>
+              <WritingAssistantComponent />
+            </RootLayout>
+          }
         />
-<Route
-  path="/templates"
-  element={
-    <RootLayout>
-      <TemplatesComponent />
-    </RootLayout>
-  }
-/>
-<Route
-  path="/writing-assistant"
-  element={
-    <RootLayout>
-      <WritingAssistantComponent />
-    </RootLayout>
-  }
-/>
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardComponent />} />
+        <Route path="/dashboard" element={<ProtectedRoute element={<DashboardLayout />} allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN]} />}>
+          <Route index element={<ProtectedRoute element={<DashboardComponent />} allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN]} />} />
 
           <Route
             path="post-lists"
@@ -202,17 +203,42 @@ function App() {
           />
         </Route>
 
-        <Route path="/stories" element={<StoriesComponent />} />
-        <Route path="/login" element={<LoginComponent />} />
+        <Route path="/stories" element={<RootLayout><StoriesComponent /></RootLayout>} />
+        <Route path="/login" element={<RootLayout><LoginComponent /></RootLayout>} />
 
         <Route
           path="/auth/email-validation"
           element={<EmailValidationComponent />}
         />
 
-        <Route path="/signup" element={<SignUpComponent />} />
-        <Route path="/pricing" element={<PricingComponent />} />
-        <Route path="/explore" element={<ExploreComponent />} />
+        <Route path="/signup" element={<RootLayout><SignUpComponent /></RootLayout>} />
+        <Route path="/pricing" element={<RootLayout><PricingComponent /></RootLayout>} />
+        <Route path="/explore" element={<RootLayout><ExploreComponent /></RootLayout>} />
+        <Route
+          path="/help"
+          element={
+            <RootLayout>
+              <HelpCenterComponent />
+            </RootLayout>
+          }
+        />
+          path="/bookmarks"
+          element={
+            <ProtectedRoute
+              element={
+                <RootLayout>
+                  <BookmarksComponent />
+                </RootLayout>
+              }
+              allowedRoles={[
+                USER_ROLE.USER,
+                USER_ROLE.WRITER,
+                USER_ROLE.ADMIN,
+                USER_ROLE.SUPER_ADMIN,
+              ]}
+            />
+          }
+        />
         <Route
           path="/community"
           element={
@@ -221,8 +247,16 @@ function App() {
             </RootLayout>
           }
         />
-        <Route path="/post/:id" element={<PostDetailsComponent />} />
-        <Route path="*" element={<NotFoundComponent />} />
+
+        <Route path="/post/:id" element={<RootLayout><PostDetailsComponent /></RootLayout>} />
+        <Route path="/about-us" element={<RootLayout><AboutUsComponent /></RootLayout>} />
+        <Route path="/career" element={<RootLayout><CareerComponent /></RootLayout>} />
+        <Route path="/contact-us" element={<RootLayout><ContactUsComponent /></RootLayout>} />
+        <Route path="/blog" element={<RootLayout><BlogComponent /></RootLayout>} />
+        <Route path="/help-center" element={<RootLayout><HelpCenterComponent /></RootLayout>} />
+        <Route path="/guidelines" element={<RootLayout><GuidelinesComponent /></RootLayout>} />
+        <Route path="/community" element={<RootLayout><CommunityComponent /></RootLayout>} />
+        <Route path="*" element={<RootLayout><NotFoundComponent /></RootLayout>} />
       </Routes>
 
     </Router>

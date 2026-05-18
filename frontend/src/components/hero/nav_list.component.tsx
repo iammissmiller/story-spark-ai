@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { isLoggedIn, removeUserInfo } from "../../services/auth.service";
+import { isLoggedIn, removeUserInfo, getUserInfo } from "../../services/auth.service";
 import { Link } from "react-router-dom";
+import { USER_ROLE } from "../../constants/role";
 import logo from "../../assets/logoNew.png";
 import NotificationComponent from "../notification/notification.component";
 import { useNotifications } from "../../hooks/useNotifications";
@@ -17,6 +18,9 @@ const NavListComponent: React.FC = () => {
     close,
     markAsRead,
   } = useNotifications();
+
+  const user = getUserInfo();
+  const isAdmin = user?.role === USER_ROLE.ADMIN || user?.role === USER_ROLE.SUPER_ADMIN;
 
   const handelLogout = () => {
     removeUserInfo();
@@ -46,8 +50,9 @@ const NavListComponent: React.FC = () => {
   }, [close]);
 
   return (
-    <div className="relative z-10 mx-auto max-w-8xl px-5 py-4">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full bg-[#0B1120]/80 backdrop-blur-md border-b border-white/10">
+      <div className="relative z-10 mx-auto max-w-8xl px-5 py-4">
+        <div className="flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to="/">
             <img src={logo} alt="logo" width={50} height={50} />
@@ -57,7 +62,12 @@ const NavListComponent: React.FC = () => {
             <Link to="/explore" className="text-gray-400 hover:text-custom transition">EXPLORE</Link>
             <Link to="/community" className="text-gray-400 hover:text-custom transition">COMMUNITY</Link>
             {isLogin && (
-              <Link to="/dashboard" className="text-gray-400 hover:text-custom transition">DASHBOARD</Link>
+              <>
+                <Link to="/bookmarks" className="text-gray-400 hover:text-custom transition">SAVED STORIES</Link>
+                {isAdmin && (
+                  <Link to="/dashboard" className="text-gray-400 hover:text-custom transition">DASHBOARD</Link>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -116,21 +126,29 @@ const NavListComponent: React.FC = () => {
           <Link to="/explore" className="text-gray-400 hover:text-white py-2">EXPLORE</Link>
           <Link to="/community" className="text-gray-400 hover:text-white py-2">COMMUNITY</Link>
           {isLogin && (
-            <Link to="/dashboard" className="text-gray-400 hover:text-white py-2">DASHBOARD</Link>
+            <>
+              <Link to="/bookmarks" className="text-gray-400 hover:text-white py-2">SAVED STORIES</Link>
+              {isAdmin && (
+                <Link to="/dashboard" className="text-gray-400 hover:text-white py-2">DASHBOARD</Link>
+              )}
+            </>
           )}
           <button type="button" className="text-left text-gray-400 py-2" data-notification-trigger="true" onClick={toggle}>
             NOTIFICATIONS {unreadCount > 0 && `(${unreadCount})`}
           </button>
-          {isLogin ? (
-            <button onClick={handelLogout} className="text-left text-gray-400 py-2">
-              LOGOUT
-            </button>
-          ) : (
-            <Link to="/login" className="text-gray-400 py-2">LOGIN</Link>
-          )}
+          {
+            isLogin ? (
+              <button onClick={handelLogout} className="text-left text-gray-400 py-2">
+                LOGOUT
+              </button>
+            ) : (
+              <Link to="/login" className="text-gray-400 py-2">LOGIN</Link>
+            )
+          }
         </div>
       )}
-    </div>
+      </div>
+    </header>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import StoriesViewComponent, { IStories } from "./stories.view.component";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getUserInfo, isLoggedIn } from "../../services/auth.service";
@@ -11,6 +11,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useGetProfileInfoQuery } from "../../redux/apis/user.api";
 import { getErrorMessage } from "../../error/error.message";
+import StoryGeneratingAnimation from "../loading/story-generating-animation.component";
 
 type Inputs = {
   prompt: string;
@@ -29,8 +30,9 @@ const StoriesComponent = () => {
   const [generateFreeModel] = useGenerateFreeModelMutation();
   const [selectedPrompt, setSelectedPrompt] = useState<string>("");
   const [textareaValue, setTextareaValue] = useState<string>("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [guestRequestCount, setGuestRequestCount] = useState<number>(() =>
-    parseInt(localStorage.getItem("guestRequestCount") || "0", 10)
+    parseInt(localStorage.getItem("guestRequestCount") || "0", 10),
   );
   const [showLimitModal, setShowLimitModal] = useState<boolean>(false);
   useEffect(() => {
@@ -60,11 +62,12 @@ const StoriesComponent = () => {
     }
     if (getWordCount(data.prompt) < 10) {
       toast.error(
-        "Please enter a prompt with at least 10 words to generate a story."
+        "Please enter a prompt with at least 10 words to generate a story.",
       );
       return;
     }
     setLoading(true);
+   
     try {
       const res = login
         ? await generateModel(data).unwrap()
@@ -93,6 +96,15 @@ const StoriesComponent = () => {
     const selectedValue = e.target.value;
     setSelectedPrompt(selectedValue);
     setTextareaValue(selectedValue);
+  };
+
+  const handleClearPrompt = () => {
+    setTextareaValue("");
+    setSelectedPrompt("");
+    setValue("prompt", "");
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   return (
@@ -132,33 +144,74 @@ const StoriesComponent = () => {
               <i className="fas fa-bolt text-yellow-400"></i>
             </button>
             <div className="mt-3 text-gray-500 text-xs">
-              <span>This month request: {login ? (data?.requestsThisMonth ?? 0) : guestRequestCount}</span>
+              <span>
+                This month request:{" "}
+                {login ? (data?.requestsThisMonth ?? 0) : guestRequestCount}
+              </span>
               <br />
               <span>Total posts: {login ? (data?.postsCount ?? 0) : 0}</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-11">
-          <h1 className="text-gray-300 text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12 leading-snug drop-shadow-lg tracking-wide">
-            ✨ Enter Prompt –{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
-              Generate Story Today!
-            </span>{" "}
-            ✨
-          </h1>
+            <div className="mt-11">
+             <h1 className="text-gray-300 text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-12">
+              ✨ Turn Your Ideas Into{" "}
+               <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
+                Amazing Stories!
+               </span>{" "}
+              ✨
+            </h1>
 
           <div className="max-w-3xl mx-auto p-4">
             <div className="bg-blue-500/10 rounded-md p-4 border border-gray-400">
               <div className="relative">
                 <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-                  <textarea
-                    {...register("prompt")}
-                    className="w-full h-32 sm:h-40 resize-none border-none outline-none bg-transparent text-gray-300 focus:ring-0 text-lg leading-relaxed tracking-wide placeholder:italic placeholder:text-gray-500"
-                    placeholder="Every great story begins with a single idea. What’s yours?"
-                    value={textareaValue}
-                    onChange={(e) => setTextareaValue(e.target.value)}
-                  ></textarea>
+                  <div className="relative">
+                    <textarea
+                      {...register("prompt")}
+                      ref={inputRef}
+                      className="w-full h-32 sm:h-40 resize-none border-none outline-none bg-transparent text-gray-300 focus:ring-0 text-lg leading-relaxed tracking-wide placeholder:italic placeholder:text-gray-500 pr-10"
+                      placeholder="Every great story begins with a single idea. What's yours?"
+                      value={textareaValue}
+                      onChange={(e) => setTextareaValue(e.target.value)}
+                    ></textarea>
+
+                    {textareaValue.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearPrompt}
+                        className="absolute right-2 top-2 text-gray-400 hover:text-red-500 transition-colors duration-200"
+                        aria-label="Clear prompt"
+                        title="Clear prompt"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 px-1">
+                    💡 <span className="font-medium">Keyboard tip:</span> Press{" "}
+                    <kbd className="px-1 py-0.5 text-xs bg-gray-700 rounded border border-gray-600">
+                      Tab
+                    </kbd>{" "}
+                    to navigate fields and{" "}
+                    <kbd className="px-1 py-0.5 text-xs bg-gray-700 rounded border border-gray-600">
+                      Enter
+                    </kbd>{" "}
+                    to generate your story.
+                  </p>
                   <div className="flex justify-end mt-2 w-full">
                     <button
                       type="submit"
@@ -207,6 +260,7 @@ const StoriesComponent = () => {
           </div>
         </div>
       </div>
+      {loading && <StoryGeneratingAnimation />}
       <StoriesViewComponent
         stories={stories}
         isLogin={login}
@@ -221,9 +275,12 @@ const StoriesComponent = () => {
               <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i className="fas fa-lock text-2xl text-blue-400"></i>
               </div>
-              <h3 className="text-2xl font-bold text-gray-200 mb-2">Free Limit Reached</h3>
+              <h3 className="text-2xl font-bold text-gray-200 mb-2">
+                Free Limit Reached
+              </h3>
               <p className="text-gray-400 mb-6 leading-relaxed">
-                You’ve used all 3 free story generations. Login to continue creating more stories.
+                You’ve used all 3 free story generations. Login to continue
+                creating more stories.
               </p>
               <div className="flex flex-col gap-3">
                 <Link

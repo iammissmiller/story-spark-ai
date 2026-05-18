@@ -89,7 +89,7 @@ const getPosts = (filters, pagination) => __awaiter(void 0, void 0, void 0, func
         sortCondition.likesCount = -1;
     }
     if (sortBy && orderBy) {
-        sortCondition[sortBy] = orderBy;
+        sortCondition[sortBy] = orderBy === "asc" ? 1 : -1;
     }
     const result = yield post_model_1.Post.find(whereCondition)
         .sort(sortCondition)
@@ -99,7 +99,8 @@ const getPosts = (filters, pagination) => __awaiter(void 0, void 0, void 0, func
         .populate({
         path: "reactions",
         populate: { path: "userId", select: "email" },
-    });
+    })
+        .populate("bookmarks", "email");
     const total = yield post_model_1.Post.countDocuments(whereCondition);
     return {
         meta: {
@@ -119,7 +120,8 @@ const getLatestPosts = () => __awaiter(void 0, void 0, void 0, function* () {
             .populate({
             path: "reactions",
             populate: { path: "userId", select: "email" },
-        });
+        })
+            .populate("bookmarks", "email");
         return res;
     }
     catch (error) {
@@ -135,7 +137,8 @@ const getFeaturedPosts = () => __awaiter(void 0, void 0, void 0, function* () {
             .populate({
             path: "reactions",
             populate: { path: "userId", select: "email" },
-        });
+        })
+            .populate("bookmarks", "email");
         return res;
     }
     catch (error) {
@@ -157,7 +160,8 @@ const getSinglePost = (id) => __awaiter(void 0, void 0, void 0, function* () {
         .populate({
         path: "reactions",
         populate: { path: "userId", select: "email" },
-    });
+    })
+        .populate("bookmarks", "email");
     if (!postById) {
         throw new api_error_1.default(http_status_1.default.NOT_FOUND, "Post not found!");
     }
@@ -170,8 +174,32 @@ const getPostsByTag = (tag) => __awaiter(void 0, void 0, void 0, function* () {
         .populate({
         path: "reactions",
         populate: { path: "userId", select: "email" },
-    });
+    })
+        .populate("bookmarks", "email");
     return result;
+});
+const toggleBookmark = (postId, token) => __awaiter(void 0, void 0, void 0, function* () {
+    const { email } = token;
+    const user = yield user_model_1.User.findOne({ email });
+    if (!user) {
+        throw new api_error_1.default(http_status_1.default.BAD_REQUEST, "User not found!");
+    }
+    const post = yield post_model_1.Post.findOne({ _id: postId });
+    if (!post) {
+        throw new api_error_1.default(http_status_1.default.BAD_REQUEST, "Post not found!");
+    }
+    post.bookmarks = post.bookmarks || [];
+    const isBookmarked = post.bookmarks.some((uId) => uId && uId.toString() === user._id.toString());
+    if (isBookmarked) {
+        post.bookmarks = post.bookmarks.filter((uId) => uId && uId.toString() !== user._id.toString());
+        yield post.save();
+        return { message: "Bookmark removed", bookmarked: false };
+    }
+    else {
+        post.bookmarks.push(user._id);
+        yield post.save();
+        return { message: "Bookmark added", bookmarked: true };
+    }
 });
 exports.PostService = {
     createPost,
@@ -181,4 +209,5 @@ exports.PostService = {
     doFeaturedPosts,
     getSinglePost,
     getPostsByTag,
+    toggleBookmark,
 };

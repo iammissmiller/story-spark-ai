@@ -20,6 +20,7 @@ const user_model_1 = require("../user/user.model");
 const jwt_helper_1 = require("../../../utils/jwt.helper");
 const config_1 = __importDefault(require("../../../config"));
 const api_error_1 = __importDefault(require("../../../errors/api_error"));
+const otp_model_1 = require("../verify_email/otp.model");
 const googleClient = new google_auth_library_1.OAuth2Client(config_1.default.google_client_id);
 const login = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { email: userEmail, password } = payload;
@@ -35,24 +36,44 @@ const login = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     if (!match) {
         throw new api_error_1.default(http_status_1.default.UNAUTHORIZED, "Password is not valid!");
     }
-    const { email, role, subscriptionType, name, postsCount, _id } = isExistUser;
-    const accessToken = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
-    const refreshToken = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
+    const { _id, email, role, subscriptionType, name, postsCount } = isExistUser;
+    const accessToken = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
     return {
         accessToken,
         refreshToken,
     };
 });
 const register = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email: userEmail } = payload;
+    const { email: userEmail, verificationToken } = payload;
+    // FIX #4: Verify that email was verified via OTP before allowing registration
+    if (!verificationToken) {
+        throw new api_error_1.default(http_status_1.default.UNAUTHORIZED, "Email verification required. Please verify your email with OTP before registering.");
+    }
+    // Check if verification token is valid
+    const otpRecord = yield otp_model_1.OTPModel.findOne({
+        email: userEmail,
+        isVerified: true,
+        verificationToken,
+    });
+    if (!otpRecord) {
+        throw new api_error_1.default(http_status_1.default.UNAUTHORIZED, "Invalid or expired verification token. Please verify your email again.");
+    }
+    // Check if verification token has expired
+    if (!otpRecord.verificationTokenExpires ||
+        new Date() > otpRecord.verificationTokenExpires) {
+        throw new api_error_1.default(http_status_1.default.UNAUTHORIZED, "Verification token has expired. Please verify your email again.");
+    }
     const isExistUser = yield user_model_1.User.findOne({ email: userEmail });
     if (isExistUser) {
         throw new api_error_1.default(http_status_1.default.NOT_FOUND, "User already exist!");
     }
     const result = yield user_model_1.User.create(payload);
-    const { email, role, subscriptionType, name, postsCount, _id } = result;
-    const accessToken = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
-    const refreshToken = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
+    // Clean up OTP record after successful registration
+    yield otp_model_1.OTPModel.deleteOne({ email: userEmail });
+    const { _id, email, role, subscriptionType, name, postsCount } = result;
+    const accessToken = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
     return {
         accessToken,
         refreshToken,
@@ -71,8 +92,8 @@ const refreshToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
     if (!user) {
         throw new api_error_1.default(http_status_1.default.NOT_FOUND, "User not found!");
     }
-    const { email, role, subscriptionType, name, postsCount, _id } = user;
-    const newAccessToken = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
+    const { _id, email, role, subscriptionType, name, postsCount } = user;
+    const newAccessToken = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
     return {
         accessToken: newAccessToken,
     };
@@ -110,9 +131,9 @@ const googleLogin = (payload) => __awaiter(void 0, void 0, void 0, function* () 
             };
             user = yield user_model_1.User.create(newUser);
         }
-        const { role, subscriptionType, postsCount, name, _id } = user;
-        const accessToken = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
-        const refreshTokenData = jwt_helper_1.JwtHalers.createToken({ email, userId: _id.toString(), role, subscriptionType, name, postsCount }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
+        const { _id, role, subscriptionType, postsCount, name } = user;
+        const accessToken = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
+        const refreshTokenData = jwt_helper_1.JwtHalers.createToken({ _id, email, role, subscriptionType, name, postsCount }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
         return {
             accessToken,
             refreshToken: refreshTokenData,

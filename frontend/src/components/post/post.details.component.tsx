@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   useGetPostByIdQuery,
@@ -13,6 +13,11 @@ import { formatDateShort } from "../../utils/time-formate";
 import { getUserInfo } from "../../services/auth.service";
 import { useToggleReactionMutation } from "../../redux/apis/reaction.api";
 import { toast } from "react-hot-toast";
+import BookmarkButton from "../BookmarkButton";
+import {
+  useToggleFollowMutation,
+  useGetFollowStatusQuery,
+} from "../../redux/apis/user.api";
 
 const PostDetailsComponent = () => {
   const navigate = useNavigate();
@@ -22,6 +27,28 @@ const PostDetailsComponent = () => {
   const { data: relatedPost } = useGetPostByTagQuery(tag || "");
   const [toggleReaction] = useToggleReactionMutation();
   const currentUser = getUserInfo();
+  const authorId = post?.author?._id;
+
+  const { data: followData } = useGetFollowStatusQuery(authorId || "", {
+    skip: !authorId || !currentUser,
+  });
+
+  const [toggleFollow] = useToggleFollowMutation();
+
+  const isFollowing = followData?.isFollowing ?? false;
+
+  const handleFollow = async () => {
+    if (!currentUser) {
+      toast.error("You need to login to follow this author");
+      return;
+    }
+    if (!authorId) return;
+    try {
+      await toggleFollow(authorId).unwrap();
+    } catch (error) {
+      toast.error("Failed to update follow status");
+    }
+  };
 
   const handleLike = async () => {
     if (!id) return;
@@ -36,6 +63,7 @@ const PostDetailsComponent = () => {
   if (isLoading) {
     return <LoadingAnimation />;
   }
+
   return (
     <div>
       <div className="max-w-6xl mx-auto px-4">
@@ -46,7 +74,6 @@ const PostDetailsComponent = () => {
           >
             <i className="fa-solid fa-left-long"></i> BACK
           </div>
-
           <div className=""></div>
         </div>
         <div className="rounded-lg shadow-sm bg-blue-500/10 mb-10">
@@ -54,12 +81,12 @@ const PostDetailsComponent = () => {
             <div className="flex justify-between">
               <div className="flex items-center space-x-4 mb-6">
                 <SSProfile
-                  name={post?.author.name as string}
+                  name={post?.author?.name || "Unknown User"}
                   size="h-12 w-12"
                 />
                 <div>
                   <h3 className="font-medium text-gray-400">
-                    {post?.author.name}
+                    {post?.author?.name || "Unknown User"}
                   </h3>
                   <div className="flex items-center text-sm text-gray-500">
                     <span>{formatDateShort(post ? post?.createdAt : "")}</span>
@@ -67,9 +94,18 @@ const PostDetailsComponent = () => {
                 </div>
               </div>
               <div className="">
-                <button className="mt-2 rounded bg-blue-500/30 text-gray-300 px-4 py-1 text-sm">
-                  Follow
-                </button>
+                {currentUser && authorId !== currentUser?.userId && (
+                  <button
+                    onClick={handleFollow}
+                    className={`mt-2 rounded px-4 py-1 text-sm cursor-pointer transition-all ${
+                      isFollowing
+                        ? "bg-blue-500/50 text-white hover:bg-red-500/30"
+                        : "bg-blue-500/30 text-gray-300 hover:bg-blue-500/40"
+                    }`}
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -90,18 +126,35 @@ const PostDetailsComponent = () => {
             </div>
 
             <div className="flex items-center justify-between border-t border-b border-gray-500 py-4 mb-12">
-              <div className="flex items-center space-x-4">
-                <button 
+              <div className="flex items-center space-x-6">
+                <button
                   onClick={handleLike}
                   className={`flex items-center space-x-2 transition-colors cursor-pointer ${
-                    post?.reactions?.some((r: any) => r.userId?.email === currentUser?.email)
+                    post?.reactions?.some(
+                      (r: any) => r.userId?.email === currentUser?.email
+                    )
                       ? "text-red-500 hover:text-red-400"
                       : "text-gray-600 hover:text-gray-400"
                   }`}
                 >
-                  <i className={`${post?.reactions?.some((r: any) => r.userId?.email === currentUser?.email) ? 'fas' : 'far'} fa-heart`}></i>
+                  <i
+                    className={`${
+                      post?.reactions?.some(
+                        (r: any) => r.userId?.email === currentUser?.email
+                      )
+                        ? "fas"
+                        : "far"
+                    } fa-heart`}
+                  ></i>
                   <span>{post?.likesCount}</span>
                 </button>
+                {post && (
+                  <BookmarkButton
+                    storyId={post._id}
+                    bookmarks={post.bookmarks}
+                    className="!border-none !px-0 bg-transparent hover:bg-transparent"
+                  />
+                )}
               </div>
               <div className="flex items-center space-x-4">
                 <button className="text-gray-600 hover:text-custom">
