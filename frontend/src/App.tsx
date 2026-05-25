@@ -47,6 +47,8 @@ import CommunityComponent from "./components/community/community.component";
 import ResourcesListComponent from "./components/community/resources_list.component";
 import ResourceDetailComponent from "./components/community/resource_detail.component";
 import MagicCursorComponent from "./components/magic-cursor/magic_cursor.component";
+import ContributorsComponent from "./components/footer/contributors";
+
 const ProtectedRoute = ({
   element,
   allowedRoles,
@@ -443,6 +445,14 @@ function App() {
                 USER_ROLE.SUPER_ADMIN,
               ]}
             />
+          }
+        />
+        <Route
+          path="/contributors"
+          element={
+            <RootLayout>
+              <ContributorsComponent />
+            </RootLayout>
           }
         />
         <Route
