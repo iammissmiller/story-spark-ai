@@ -32,17 +32,11 @@ const LoginComponent = () => {
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsBusy(true);
-
     try {
       const res = await loginUser({ ...data }).unwrap();
-
       if (res.data.accessToken) {
         toast.success("User logged in successfully!");
-
-        storeUserInfo({
-          accessToken: res.data.accessToken,
-        });
-
+        storeUserInfo({ accessToken: res.data.accessToken });
         setIsLoggedIn(true);
       }
     } catch {
@@ -56,18 +50,18 @@ const LoginComponent = () => {
     credentialResponse: CredentialResponse
   ) => {
     setIsBusy(true);
-
     try {
       const res = await googleLogin({
         token: credentialResponse.credential,
       }).unwrap();
-
       if (res.data.accessToken) {
         toast.success("User logged in successfully with Google!");
+
 
         storeUserInfo({
           accessToken: res.data.accessToken,
         });
+
 
         setIsLoggedIn(true);
       }
@@ -82,14 +76,11 @@ const LoginComponent = () => {
     toast.error("Google login failed. Please try again.");
   };
 
-  // Role-based redirect fix
   if (isLoggedIn) {
     const userInfo = getUserInfo();
-
     const isDashboardUser =
       userInfo?.role === USER_ROLE.ADMIN ||
       userInfo?.role === USER_ROLE.SUPER_ADMIN;
-
     return (
       <RedirectComponent
         defaultPath={isDashboardUser ? "/dashboard" : "/explore"}
@@ -99,13 +90,17 @@ const LoginComponent = () => {
 
   return (
 
+
+
     <div className="min-h-screen bg-white dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex items-center justify-center relative overflow-hidden px-4 box-border">
 
       {/* Background Glow */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
 
+
       <div className="flex w-full max-w-md flex-col justify-center py-12 relative z-10 box-border">
+
         <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8">
           <h2 className="text-center text-4xl sm:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400 drop-shadow-sm">
             STORY SPARK AI
@@ -127,7 +122,9 @@ const LoginComponent = () => {
             Welcome Back
           </h3>
 
+
           {/* Added w-full to the form */}
+
           <form className="space-y-5 w-full" onSubmit={handleSubmit(onSubmit)}>
             <SSInput
               label="Email address"
@@ -139,8 +136,8 @@ const LoginComponent = () => {
               register={register}
               validation={{ required: "Email is required" }}
               error={errors.email}
+              autoFocus
             />
-
             <SSInput
               label="Password"
               name="password"
@@ -152,7 +149,6 @@ const LoginComponent = () => {
               validation={{ required: "Password is required" }}
               error={errors.password}
             />
-
             <div className="flex justify-end -mt-2">
               <a
                 href="/forgot-password"
@@ -161,6 +157,7 @@ const LoginComponent = () => {
                 Forgot Password?
               </a>
             </div>
+
 
             <SSButton text="Sign In" type="submit" isLoading={isBusy} />
           </form>
@@ -171,13 +168,16 @@ const LoginComponent = () => {
             </div>
 
             <div className="relative flex justify-center text-sm w-full">
+
               <span className="px-4 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                 OR
               </span>
             </div>
           </div>
 
+
           <div className="mt-6 flex justify-center list-none w-full">
+
             <GoogleLogin
               onSuccess={handleGoogleLoginSuccess}
               onError={handleGoogleLoginError}
@@ -195,6 +195,7 @@ const LoginComponent = () => {
           </p>
         </div>
       </div>
+
       <Toaster position="top-right" reverseOrder={false} />
     </div>
   );
