@@ -59,6 +59,47 @@ const CommunitySpotlightComponent = () => {
   const { data, isLoading, isError, refetch } = useGetLatestListsQuery(undefined);
   const navigate = useNavigate();
 
+  const topWriters = useMemo<SpotlightWriter[]>(() => {
+    const posts: Post[] = data?.posts ?? [];
+    if (posts.length === 0) return [];
+
+    const writerMap = new Map<string, Omit<SpotlightWriter, "engagementScore"> & { engagementScore?: number }>();
+
+    for (const post of posts) {
+      const authorId = post.author?._id ?? post.author?.email ?? post.author?.name;
+      if (!authorId) continue;
+
+      const existing = writerMap.get(authorId);
+      const postScore = getPostEngagementScore(post);
+
+      if (!existing) {
+        writerMap.set(authorId, {
+          author: post.author,
+          storiesCount: 1,
+          likesCount: post.likesCount ?? 0,
+          commentsCount: post.commentsCount ?? 0,
+          viewsCount: post.viewsCount ?? 0,
+          bookmarksCount: getBookmarkCount(post),
+          topPost: post,
+        });
+      } else {
+        existing.storiesCount += 1;
+        existing.likesCount += post.likesCount ?? 0;
+        existing.commentsCount += post.commentsCount ?? 0;
+        existing.viewsCount += post.viewsCount ?? 0;
+        existing.bookmarksCount += getBookmarkCount(post);
+        if (postScore > getPostEngagementScore(existing.topPost)) {
+          existing.topPost = post;
+        }
+      }
+    }
+
+    return Array.from(writerMap.values())
+      .map((w) => ({ ...w, engagementScore: getWriterEngagementScore(w) }))
+      .sort((a, b) => b.engagementScore - a.engagementScore)
+      .slice(0, TOP_WRITERS_LIMIT) as SpotlightWriter[];
+  }, [data]);
+
   if (isLoading) return <LoadingAnimation />;
   if (isError) {
     return (
