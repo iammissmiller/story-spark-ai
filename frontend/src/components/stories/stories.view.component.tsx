@@ -107,90 +107,21 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
         ...style,
       }}
     >
-      {/* Decorative orbs */}
-      <div style={{
-        position: "absolute", top: "-30%", right: "-15%",
-        width: "60%", height: "120%",
-        background: "rgba(255,255,255,0.08)",
-        borderRadius: "50%",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: "-20%", left: "-10%",
-        width: "45%", height: "80%",
-        background: "rgba(0,0,0,0.12)",
-        borderRadius: "50%",
-        pointerEvents: "none",
-      }} />
-
-      {/* Accent glyph */}
-      <div style={{
-        position: "absolute", top: "12px", right: "16px",
-        fontSize: "3.5rem",
-        color: theme.accent,
-        opacity: 0.35,
-        lineHeight: 1,
-        userSelect: "none",
-        pointerEvents: "none",
-        fontWeight: 300,
-      }}>
+      <div style={{ position: "absolute", top: "-30%", right: "-15%", width: "60%", height: "120%", background: "rgba(255,255,255,0.08)", borderRadius: "50%", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "-20%", left: "-10%", width: "45%", height: "80%", background: "rgba(0,0,0,0.12)", borderRadius: "50%", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "12px", right: "16px", fontSize: "3.5rem", color: theme.accent, opacity: 0.35, lineHeight: 1, userSelect: "none", pointerEvents: "none", fontWeight: 300 }}>
         {theme.icon}
       </div>
-
-      {/* Genre pill */}
-      <div style={{
-        position: "absolute", top: "14px", left: "14px",
-        background: "rgba(0,0,0,0.28)",
-        backdropFilter: "blur(6px)",
-        color: "#fff",
-        fontSize: "0.65rem",
-        fontWeight: 700,
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
-        padding: "3px 10px",
-        borderRadius: "999px",
-        border: `1px solid ${theme.accent}55`,
-        userSelect: "none",
-      }}>
+      <div style={{ position: "absolute", top: "14px", left: "14px", background: "rgba(0,0,0,0.28)", backdropFilter: "blur(6px)", color: "#fff", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", padding: "3px 10px", borderRadius: "999px", border: `1px solid ${theme.accent}55`, userSelect: "none" }}>
         {tag}
       </div>
-
-      {/* Large faded initials centred */}
-      <div style={{
-        position: "absolute", inset: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <div style={{
-          fontSize: "5rem",
-          fontWeight: 900,
-          color: "rgba(255,255,255,0.12)",
-          letterSpacing: "-0.04em",
-          lineHeight: 1,
-          userSelect: "none",
-          pointerEvents: "none",
-        }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: "5rem", fontWeight: 900, color: "rgba(255,255,255,0.12)", letterSpacing: "-0.04em", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>
           {initials}
         </div>
       </div>
-
-      {/* Title at bottom */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
-        padding: "32px 14px 12px",
-      }}>
-        <p style={{
-          margin: 0,
-          color: "#fff",
-          fontSize: "0.9rem",
-          fontWeight: 700,
-          lineHeight: 1.3,
-          textShadow: "0 1px 6px rgba(0,0,0,0.5)",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}>
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)", padding: "32px 14px 12px" }}>
+        <p style={{ margin: 0, color: "#fff", fontSize: "0.9rem", fontWeight: 700, lineHeight: 1.3, textShadow: "0 1px 6px rgba(0,0,0,0.5)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {title}
         </p>
       </div>
@@ -266,6 +197,9 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [newTopicTitle, setNewTopicTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  // ── NEW: Share popover state ──
+  const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+  const [isLinkCopied, setIsLinkCopied] = useState<boolean>(false);
   const [showWorldMap, setShowWorldMap] = useState<boolean>(false);
   const [showRemix, setShowRemix] = useState<boolean>(false);
   const [showTranslator, setShowTranslator] = useState<boolean>(false);
@@ -323,13 +257,15 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
       setIsGeneratingEndings(false);
     }
   };
+
   if (!stories.length) {
-  return (
-    <div className="text-center text-gray-400 py-10">
-      No stories generated yet. Start by entering a prompt ✨
-    </div>
-  );
-}
+    return (
+      <div className="text-center text-gray-400 py-10">
+        No stories generated yet. Start by entering a prompt ✨
+      </div>
+    );
+  }
+
   const handleApplyEnding = (endingData: { style: string; ending: string; fullStory: string }) => {
     if (!selectedStory) return;
     const updatedStory = { ...selectedStory, content: endingData.fullStory };
@@ -433,6 +369,33 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
       toast.success("Story copied!");
       setTimeout(() => setIsCopied(false), 2000);
     }
+  };
+
+  // ── NEW: Share handlers ──
+  const handleShareLink = async () => {
+    const shareUrl = window.location.href;
+    await navigator.clipboard.writeText(shareUrl);
+    setIsLinkCopied(true);
+    toast.success("Link copied to clipboard!");
+    setTimeout(() => {
+      setIsLinkCopied(false);
+      setIsShareOpen(false);
+    }, 2000);
+  };
+
+  const handleShareTwitter = () => {
+    if (!selectedStory) return;
+    const text = encodeURIComponent(`Check out this AI-generated story: "${selectedStory.title}" ✨`);
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank", "noopener,noreferrer");
+    setIsShareOpen(false);
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!selectedStory) return;
+    const text = encodeURIComponent(`Check out this AI-generated story: "${selectedStory.title}" ✨\n${window.location.href}`);
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+    setIsShareOpen(false);
   };
 
   const handleExportPDF = async () => {
@@ -580,9 +543,6 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
       </div>
     );
   }
-  if (!selectedStory) {
-    return null;
-  }
   if (!selectedStory) return null;
 
   return (
@@ -615,7 +575,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
               </div>
             </div>
 
-            {/* ── SPOT 1: Story selector thumbnails (circular) ── */}
+            {/* Story selector thumbnails */}
             <div className="flex justify-start sm:justify-end">
               <div className="flex -space-x-5">
                 {stories && stories.length > 0 && stories.map((story) => (
@@ -647,9 +607,62 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <h3 className="text-xl font-bold text-slate-200 relative z-10">Generated Story</h3>
               <div className="flex flex-wrap items-center gap-2 relative z-10">
-                <button type="button" className="rounded-lg px-4 py-2 bg-slate-700 text-slate-200 font-semibold cursor-pointer hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleCopyStory} disabled={!selectedStory}>
+
+                {/* Copy button */}
+                <button
+                  type="button"
+                  className="rounded-lg px-4 py-2 bg-slate-700 text-slate-200 font-semibold cursor-pointer hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleCopyStory}
+                  disabled={!selectedStory}
+                >
                   {isCopied ? "✓ Copied" : "📋 Copy"}
                 </button>
+
+                {/* ── NEW: Share button with popover ── */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="rounded-lg px-4 py-2 bg-slate-700 text-slate-200 font-semibold cursor-pointer hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setIsShareOpen((prev) => !prev)}
+                    disabled={!selectedStory}
+                  >
+                    🔗 Share
+                  </button>
+                  {isShareOpen && (
+                    <>
+                      {/* Backdrop — closes popover on outside click */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setIsShareOpen(false)}
+                      />
+                      {/* Popover menu */}
+                      <div className="absolute left-0 top-full mt-2 z-20 w-44 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
+                          onClick={handleShareLink}
+                        >
+                          🔗 {isLinkCopied ? "✓ Copied!" : "Copy Link"}
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
+                          onClick={handleShareTwitter}
+                        >
+                          𝕏 Share on X
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
+                          onClick={handleShareWhatsApp}
+                        >
+                          💬 WhatsApp
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <button type="button" className="rounded-lg px-4 py-2 bg-purple-700 text-slate-200 font-semibold cursor-pointer hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleExportPDF} disabled={!selectedStory}>
                   📄 Export PDF
                 </button>
@@ -662,12 +675,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
                 <button type="button" className="rounded-lg px-4 py-2 bg-fuchsia-700 text-slate-200 font-semibold cursor-pointer hover:bg-fuchsia-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setShowRemix(true)} disabled={!selectedStory}>
                   🔀 Remix
                 </button>
-                <button
-                  type="button"
-                  className="rounded-lg px-4 py-2 bg-emerald-700 text-slate-200 font-semibold cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => setShowTranslator(true)}
-                  disabled={!selectedStory}
-                >
+                <button type="button" className="rounded-lg px-4 py-2 bg-emerald-700 text-slate-200 font-semibold cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setShowTranslator(true)} disabled={!selectedStory}>
                   🌍 Translate
                 </button>
                 <button
@@ -845,7 +853,6 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
           <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden group">
             <div className="relative flex flex-col rounded-lg">
               <div className="relative m-3 overflow-hidden text-white rounded-xl" style={{ height: "192px" }}>
-                {/* ── SPOT 2: Rectangular cover image ── */}
                 <StoryCoverImage
                   title={selectedStory.title}
                   tag={selectedStory.tag}
@@ -853,7 +860,6 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
                   style={{ width: "100%", height: "100%", borderRadius: "0.75rem" }}
                 />
               </div>
-
               <div className="px-3 py-1">
                 <div className="flex justify-between items-center mb-2 w-full">
                   <div className="flex items-center gap-2">
@@ -887,6 +893,9 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
       )}
       {showWorldMap && selectedStory && (
         <StoryWorldMap story={selectedStory.content} title={selectedStory.title} onClose={() => setShowWorldMap(false)} />
+      )}
+      {showTranslator && selectedStory && (
+        <StoryTranslator story={selectedStory} onClose={() => setShowTranslator(false)} />
       )}
       <Toaster position="top-right" reverseOrder={false} />
     </div>
