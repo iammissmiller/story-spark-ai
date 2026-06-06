@@ -35,6 +35,8 @@ export const UserSchema: Schema<IUser> = new Schema<IUser, UserModel>(
         twitter: { type: String, default: "" },
         linkedin: { type: String, default: "" },
         instagram: { type: String, default: "" },
+        github:    { type: String, default: '' },
+        discord:   { type: String, default: '' },
       },
     },
     subscriptionType: {
@@ -60,6 +62,12 @@ export const UserSchema: Schema<IUser> = new Schema<IUser, UserModel>(
       streak: { type: Number, default: 0 },
       lastActiveDate: { type: Date, default: null },
       badges: [{ type: String }],
+    },
+    writingStreak: {
+      currentStreak: { type: Number, default: 0 },
+      longestStreak: { type: Number, default: 0 },
+      lastActiveDate: { type: Date, default: null },
+      totalWritingDays: { type: Number, default: 0 },
     },
     readingPreferences: {
       favoriteGenres: [
